@@ -21,8 +21,8 @@ server.registerTool(
     },
   },
   async ({ count, category }) => {
-    const items = await fetchNews(category, count);
-    const header = `${category ?? "종합"} 주요뉴스 ${items.length}건`;
+    const { items, source } = await fetchNews(category, count);
+    const header = `${category ?? "종합"} 주요뉴스 ${items.length}건 (출처: ${source})`;
     const lines = items.map((it, i) => `${i + 1}. ${it.title}\n   ${it.url}`);
     return {
       content: [{ type: "text", text: [header, ...lines].join("\n") }],
