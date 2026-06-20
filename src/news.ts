@@ -37,3 +37,24 @@ export function dedupeByTitle(items: NewsItem[]): NewsItem[] {
   }
   return out;
 }
+
+import { XMLParser } from "fast-xml-parser";
+
+const parser = new XMLParser({ ignoreAttributes: false, trimValues: true });
+
+export async function fetchNews(category: string | undefined, count: number): Promise<NewsItem[]> {
+  const url = rssUrlFor(category);
+  const res = await fetch(url, { headers: { "User-Agent": "mcp-newsfeed/1.0" } });
+  if (!res.ok) throw new Error(`Google News RSS HTTP ${res.status}`);
+  const xml = await res.text();
+  const doc = parser.parse(xml);
+  const rawItems = doc?.rss?.channel?.item ?? [];
+  const arr = Array.isArray(rawItems) ? rawItems : [rawItems];
+  const items: NewsItem[] = arr
+    .map((it: any) => ({
+      title: typeof it?.title === "string" ? it.title : String(it?.title ?? ""),
+      url: typeof it?.link === "string" ? it.link : String(it?.link ?? ""),
+    }))
+    .filter((it: NewsItem) => it.title && it.url);
+  return dedupeByTitle(items).slice(0, count);
+}
